@@ -30,22 +30,16 @@ class CovidRepository {
 
   static async getAllCountryData() {
     try {
-      const data = [];
       const countries = await CovidRepository.getCountryList();
-      for (const country of countries) {
-        try {
-          const response = await axios.get(`${baseUrl}/countries/${country.iso3 || country.name}`);
-          data.push({
-            name: country.name,
-            confirmed: response.data.confirmed.value,
-            recovered: response.data.recovered.value,
-            deaths: response.data.deaths.value,
-          });
-        } catch (error) {
-          continue;
-        }
-      }
-      return data;
+      const data = await Promise.all(countries.map((country) => axios.get(`${baseUrl}/countries/${country.iso3 || country.name}`)
+        .then((response) => ({
+          name: country.name,
+          confirmed: response.data.confirmed.value,
+          recovered: response.data.recovered.value,
+          deaths: response.data.deaths.value,
+        }))
+        .catch(console.error)));
+      return data.filter((country) => country !== undefined);
     } catch (error) {
       console.error(error);
       return null;
